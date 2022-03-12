@@ -7,9 +7,11 @@ import kr.co.ggabi.addon.Dto.ResultDto;
 import kr.co.ggabi.addon.Repository.AddonRepository;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
-import java.sql.Blob;
-import java.sql.SQLException;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -75,7 +77,7 @@ public class AnalysisService {
 
         // 1. blob to file
         int listIdx = 0;
-        for(Blob blob : addonReqDto.files){
+        for(String fileData : addonReqDto.files){
             String path = "./downloads"+ File.separator+addonResDto.userName+File.separator+addonResDto.mailId+File.separator;
             String fileName = addonReqDto.fileNames.get(listIdx);
             String fileNameExt = fileName.substring(fileName.lastIndexOf(".") + 1);
@@ -88,21 +90,12 @@ public class AnalysisService {
                 File saveFile = new File(save.toString());
                 if(saveFile.isFile()){
                     try {
-                        InputStream inputStream = blob.getBinaryStream();
                         OutputStream outputStream = new FileOutputStream(save.toString());
 
-                        int bytesRead = -1;
-                        byte[] buffer = new byte[BUFFER_SIZE];
-                        while ((bytesRead = inputStream.read(buffer)) != -1) {
-                            outputStream.write(buffer, 0, bytesRead);
-                        }
+                        outputStream.write(fileData.getBytes(StandardCharsets.UTF_8));
 
-                        inputStream.close();
                         outputStream.close();
                         System.out.println("File saved");
-
-                    } catch (SQLException e) {
-                        e.printStackTrace();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

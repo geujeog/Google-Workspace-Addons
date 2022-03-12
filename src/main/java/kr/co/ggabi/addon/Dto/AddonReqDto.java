@@ -3,7 +3,6 @@ package kr.co.ggabi.addon.Dto;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.sql.Blob;
 import java.util.List;
 
 @Getter
@@ -14,7 +13,6 @@ public class AddonReqDto {
     public String mailId;
 
     public List<String> fileNames;
-    public List<Blob> files;
-
+    public List<String> files;
 }
 
