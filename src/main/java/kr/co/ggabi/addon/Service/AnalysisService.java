@@ -26,9 +26,9 @@ public class AnalysisService {
         this.addonRepository = addonRepository;
     }
 
-    public void checkBeforeAnalysis(AddonReqDto addonReqDto, List<ResultDto> resultDto){
+    public void checkBeforeAnalysis(AddonReqDto addonReqDto, List<ResultDto> resultDto) {
 
-        for(String filename : addonReqDto.fileNames){
+        for (String filename : addonReqDto.fileNames) {
             ResultDto dto = new ResultDto();
             dto.fileName = filename;
             dto.malicious = 0.0;
@@ -37,24 +37,22 @@ public class AnalysisService {
 
             /* 체크 1. 확장자가 없거나 2개 이상일 경우 악성 */
             //System.out.println(fileExt.length);
-            if(fileExt.length == 0 || fileExt.length > 2){
+            if (fileExt.length == 0 || fileExt.length > 2) {
                 dto.malicious = -1;
             }
 
             /* 체크 2. 분석 가능한 확장자인지 검사 */
-            else if(!(fileExt[fileExt.length-1]).equals("pdf")
-                    || !(fileExt[fileExt.length-1]).equals("docx")
-                    || !(fileExt[fileExt.length-1]).equals("xlsx")
-                    || !(fileExt[fileExt.length-1]).equals("hwp"))
-            {
+            else if (!(fileExt[fileExt.length - 1]).equals("pdf")
+                    || !(fileExt[fileExt.length - 1]).equals("docx")
+                    || !(fileExt[fileExt.length - 1]).equals("xlsx")
+                    || !(fileExt[fileExt.length - 1]).equals("hwp")) {
                 dto.malicious = -1;
             }
 
             /* 데이터 베이스에 존재하는 값인지 검사 */
-            if(dto.malicious >= 0.0)
-            {
+            if (dto.malicious >= 0.0) {
                 Optional<Addon> addon = addonRepository.findByUserNameAndMailIdAndFileName(addonReqDto.userName, addonReqDto.mailId, filename);
-                if(!addon.isPresent()){
+                if (!addon.isPresent()) {
                     dto.malicious = addon.get().malicious;
                 }
             }
@@ -64,7 +62,7 @@ public class AnalysisService {
     }
 
 
-    public AddonResDto analysis(AddonReqDto addonReqDto){
+    public AddonResDto analysis(AddonReqDto addonReqDto) {
 
         AddonResDto addonResDto = new AddonResDto();
         List<ResultDto> resultDto = new ArrayList<>();
@@ -75,35 +73,33 @@ public class AnalysisService {
         // 0. 체크
         checkBeforeAnalysis(addonReqDto, resultDto);
 
+        // 0. 폴더 생성
+        String path = "./downloads" + File.separator + addonResDto.userName + File.separator + addonResDto.mailId + File.separator;
+
+        File dir = new File(path);
+        if (!dir.exists())
+            dir.mkdirs();
+
         // 1. blob to file
         int listIdx = 0;
-        for(String fileData : addonReqDto.files){
-            String path = "./downloads"+ File.separator+addonResDto.userName+File.separator+addonResDto.mailId+File.separator;
+        for (String fileData : addonReqDto.files) {
             String fileName = addonReqDto.fileNames.get(listIdx);
             String fileNameExt = fileName.substring(fileName.lastIndexOf(".") + 1);
             StringBuilder save = new StringBuilder(path + fileName);
 
-            File createFile = new File(path);
-            if(!createFile.exists()){
-                createFile.mkdirs();
+            try {
+                OutputStream outputStream = new FileOutputStream(save.toString());
 
-                File saveFile = new File(save.toString());
-                if(saveFile.isFile()){
-                    try {
-                        OutputStream outputStream = new FileOutputStream(save.toString());
+                outputStream.write(fileData.getBytes(StandardCharsets.UTF_8));
 
-                        outputStream.write(fileData.getBytes(StandardCharsets.UTF_8));
-
-                        outputStream.close();
-                        System.out.println("File saved");
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
+                outputStream.close();
+                System.out.println("File saved");
+            } catch (IOException e) {
+                e.printStackTrace();
             }
 
             // 2. 첨부파일 분석
-            if(resultDto.get(listIdx).malicious == 0.0) {
+            if (resultDto.get(listIdx).malicious == 0.0) {
                 double result = staticAnalysis(fileNameExt, path, fileName);
                 resultDto.get(listIdx).malicious = result;
                 addonResDto.analyzedResult = resultDto;
@@ -193,7 +189,7 @@ public class AnalysisService {
     }
 
 
-    public double staticAnalysis(String fileExtension, String path, String fileName){
+    public double staticAnalysis(String fileExtension, String path, String fileName) {
         String command = "/usr/bin/python3.8";
         String hwpArg = "./model/file_predict.py";
 
